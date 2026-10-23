@@ -1,0 +1,59 @@
+@keyframes popIn {
+    0% { opacity: 0; transform: scale(0.92) translateY(16px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-pop-in {
+    animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.glass-card {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card-hover {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card-hover:hover {
+    transform: translateY(-6px) scale(1.01);
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(129, 140, 248, 0.4);
+    box-shadow: 0 20px 35px -10px rgba(79, 70, 229, 0.3);
+}
+
+.gold-border {
+    border-color: rgba(245, 158, 11, 0.6) !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.25) !important;
+}
+.silver-border {
+    border-color: rgba(148, 163, 184, 0.6) !important;
+    box-shadow: 0 0 20px rgba(148, 163, 184, 0.15) !important;
+}
+.bronze-border {
+    border-color: rgba(217, 119, 6, 0.6) !important;
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.2) !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 9999px;
+}
+
+canvas#confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 100;
+}
