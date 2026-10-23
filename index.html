@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MasterQuiz Pro - Modern Learning & Scoreboard Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 3s infinite ease-in-out',
+                        'float': 'float 4s ease-in-out infinite',
+                        'shine': 'shine 2s linear infinite',
+                        'border-glow': 'borderGlow 3s infinite linear',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { opacity: 0.3, transform: 'scale(1)' },
+                            '50%': { opacity: 0.7, transform: 'scale(1.08)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shine: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' },
+                        },
+                        borderGlow: {
+                            '0%': { borderColor: 'rgba(99, 102, 241, 0.4)' },
+                            '50%': { borderColor: 'rgba(236, 72, 153, 0.6)' },
+                            '100%': { borderColor: 'rgba(99, 102, 241, 0.4)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 font-sans antialiased flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative overflow-x-hidden min-h-screen">
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="fixed top-[-10%] left-[-10%] w-[550px] h-[550px] rounded-full bg-indigo-600/20 blur-[140px] pointer-events-none animate-pulse-glow"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[550px] h-[550px] rounded-full bg-purple-600/20 blur-[140px] pointer-events-none animate-pulse-glow" style="animation-delay: 1.5s;"></div>
+    <div class="fixed top-[40%] left-[30%] w-[350px] h-[350px] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none animate-pulse-glow" style="animation-delay: 3s;"></div>
+
+    <header class="w-full bg-slate-900/70 backdrop-blur-2xl border-b border-slate-800/80 sticky top-0 z-50 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer group" onclick="app.showScreen('home')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white font-black text-xl group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-black tracking-tight bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">MasterQuiz<span class="text-indigo-500">.</span></span>
+                    <span class="block text-[10px] text-slate-400 font-bold tracking-widest uppercase">PRO &bull; LEADERBOARD PORTAL</span>
+                </div>
+            </div>
+
+            <!-- Header Menu / Controls -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button onclick="app.showScreen('leaderboard')" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 hover:border-amber-500/50 text-amber-400 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm">
+                    <i class="fa-solid fa-trophy text-amber-400"></i>
+                    <span class="hidden sm:inline">Leaderboard Cards</span>
+                </button>
+
+                <button id="sound-btn" onclick="soundFx.toggleMute()" title="Toggle Sound Effects" class="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700/80 hover:border-slate-500 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-xs text-indigo-400"></i>
+                </button>
+
+                <!-- Active Quiz HUD Stats -->
+                <div id="nav-stats" class="hidden items-center space-x-3 bg-slate-950/90 px-4 py-1.5 rounded-full border border-slate-700/80 text-xs font-semibold shadow-inner">
+                    <span id="nav-subject-badge" class="text-indigo-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-book-open"></i> <span id="lbl-nav-subj">OS</span>
+                    </span>
+                    <span class="text-slate-700">|</span>
+                    <span class="text-amber-400 flex items-center gap-1.5 font-mono">
+                        <i class="fa-solid fa-stopwatch"></i> <span id="lbl-nav-timer">00:00</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full z-10">
+
+        <!-- SCREEN 1: Home & Subject Selection -->
+        <div id="screen-home" class="w-full animate-pop-in space-y-10">
+            <!-- Hero Title -->
+            <div class="text-center space-y-4 max-w-2xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shadow-sm animate-float">
+                    <i class="fa-solid fa-bolt text-amber-400"></i> Speed & Precision Evaluation
+                </div>
+                <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+                    Dominate the <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Tech Scoreboard</span>
+                </h1>
+                <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                    Test your expertise across OS, Java, Networks, and Mathematics. Earn streak combos, beat personal bests, and post your score to the global hall of fame!
+                </p>
+            </div>
+
+            <!-- Subject Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+                
+                <!-- OS Card -->
+                <div onclick="app.startQuiz('os')" class="glass-card glass-card-hover rounded-3xl p-6 cursor-pointer flex flex-col justify-between relative overflow-hidden group">
+                    <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-lg shadow-indigo-500/10">
+                                <i class="fa-solid fa-microchip"></i>
+                            </div>
+                            <span class="text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">OS Core</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">Operating Systems</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-6">Process scheduling, deadlocks, paging, virtual memory & kernel calls.</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-4 border-t border-slate-800 text-xs font-bold">
+                        <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-list-check text-indigo-400"></i> 5 Questions</span>
+                        <span class="text-indigo-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">Start <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+                    </div>
+                </div>
+
+                <!-- Java Card -->
+                <div onclick="app.startQuiz('java')" class="glass-card glass-card-hover rounded-3xl p-6 cursor-pointer flex flex-col justify-between relative overflow-hidden group">
+                    <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-lg shadow-amber-500/10">
+                                <i class="fa-brands fa-java"></i>
+                            </div>
+                            <span class="text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">OOP & JVM</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2 group-hover:text-amber-300 transition-colors">Java Programming</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-6">OOP principles, collections, JVM memory, exceptions, and polymorphism.</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-4 border-t border-slate-800 text-xs font-bold">
+                        <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-list-check text-amber-400"></i> 5 Questions</span>
+                        <span class="text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">Start <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+                    </div>
+                </div>
+
+                <!-- Computer Networks Card -->
+                <div onclick="app.startQuiz('cn')" class="glass-card glass-card-hover rounded-3xl p-6 cursor-pointer flex flex-col justify-between relative overflow-hidden group">
+                    <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-lg shadow-cyan-500/10">
+                                <i class="fa-solid fa-network-wired"></i>
+                            </div>
+                            <span class="text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">Protocols</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">Computer Networks</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-6">OSI layers, TCP/UDP, IP addressing, DNS, ARP, and HTTP/HTTPS.</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-4 border-t border-slate-800 text-xs font-bold">
+                        <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-list-check text-cyan-400"></i> 5 Questions</span>
+                        <span class="text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">Start <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+                    </div>
+                </div>
+
+                <!-- Mathematics Card -->
+                <div onclick="app.startQuiz('math')" class="glass-card glass-card-hover rounded-3xl p-6 cursor-pointer flex flex-col justify-between relative overflow-hidden group">
+                    <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-lg shadow-emerald-500/10">
+                                <i class="fa-solid fa-square-root-variable"></i>
+                            </div>
+                            <span class="text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Discrete & Alg</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">Mathematics</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-6">Matrices, graph theory, derivatives, probability, and sets.</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-4 border-t border-slate-800 text-xs font-bold">
+                        <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-list-check text-emerald-400"></i> 5 Questions</span>
+                        <span class="text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">Start <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Home Banner Quick Stats -->
+            <div class="glass-card p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 border-indigo-500/20">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-extrabold text-white">Live Leaderboard Active</h4>
+                        <p class="text-xs text-slate-400">Scores are saved dynamically. Compete across all 4 core technical subjects.</p>
+                    </div>
+                </div>
+                <button onclick="app.showScreen('leaderboard')" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs transition-all shadow-lg shadow-indigo-500/25 cursor-pointer w-full md:w-auto text-center">
+                    <i class="fa-solid fa-trophy mr-1.5"></i> View High Scores & Leaderboard
+                </button>
+            </div>
+
+        </div>
+
+        <!-- SCREEN 2: Active Quiz Card -->
+        <div id="screen-quiz" class="w-full hidden animate-pop-in space-y-6 max-w-2xl mx-auto">
+            
+            <!-- Quiz HUD Header -->
+            <div class="glass-card p-5 rounded-3xl shadow-2xl space-y-4 border-indigo-500/20">
+                <div class="flex items-center justify-between text-xs font-bold">
+                    <span id="quiz-progress-text" class="text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-compass"></i> Question 1 of 5
+                    </span>
+                    <div class="flex items-center gap-3">
+                        <span id="streak-badge" class="hidden px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-extrabold text-[11px] animate-pulse">
+                            <i class="fa-solid fa-fire"></i> <span id="streak-count">0</span>x Combo!
+                        </span>
+                        <span id="quiz-timer-badge" class="flex items-center gap-2 px-3 py-1 bg-slate-900/90 rounded-full text-slate-200 border border-slate-700/80 font-mono">
+                            <i class="fa-solid fa-clock text-indigo-400"></i> <span id="timer-count">20s</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                    <div id="progress-bar-fill" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full w-1/5 rounded-full transition-all duration-500 ease-out"></div>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="glass-card p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6 relative overflow-hidden">
+                <div class="space-y-3">
+                    <span id="difficulty-badge" class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        Medium Difficulty
+                    </span>
+                    <h2 id="question-title" class="text-lg sm:text-2xl font-extrabold text-white leading-snug">
+                        <!-- Dynamic Question Text -->
+                    </h2>
+                </div>
+
+                <!-- Options -->
+                <div id="options-container" class="space-y-3 pt-2">
+                    <!-- Dynamic Options -->
+                </div>
+
+                <!-- Footer Buttons -->
+                <div class="flex items-center justify-between pt-6 border-t border-slate-800">
+                    <button onclick="app.quitQuiz()" class="text-xs font-bold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-800/50 cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i> Quit Test
+                    </button>
+                    <button id="btn-next" onclick="app.nextQuestion()" disabled class="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 text-white font-bold text-xs transition-all shadow-lg shadow-indigo-600/30 disabled:shadow-none cursor-pointer disabled:cursor-not-allowed flex items-center gap-2">
+                        Next Question <i class="fa-solid fa-arrow-right text-[11px]"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SCREEN 3: Results & Scoreboard Entry Modal -->
+        <div id="screen-results" class="w-full hidden animate-pop-in space-y-6 max-w-2xl mx-auto">
+            
+            <div class="glass-card p-6 sm:p-10 rounded-3xl shadow-2xl text-center space-y-8 relative overflow-hidden">
+                
+                <div class="relative w-20 h-20 mx-auto">
+                    <div class="absolute inset-0 bg-amber-500/20 rounded-3xl blur-xl animate-pulse"></div>
+                    <div class="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-300 flex items-center justify-center text-slate-950 text-3xl shadow-xl font-bold">
+                        <i id="res-trophy-icon" class="fa-solid fa-trophy"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h2 id="res-headline" class="text-3xl sm:text-4xl font-black text-white">Outstanding Job!</h2>
+                    <p id="results-subtitle" class="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+                        Assessment Completed successfully.
+                    </p>
+                </div>
+
+                <!-- Score Stats Panel -->
+                <div class="grid grid-cols-3 gap-3 bg-slate-950/80 p-5 rounded-2xl border border-slate-800 shadow-inner">
+                    <div class="text-center">
+                        <span class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">Final Score</span>
+                        <span id="res-score" class="text-xl sm:text-2xl font-black text-indigo-400">4 / 5</span>
+                    </div>
+                    <div class="text-center border-x border-slate-800 px-2">
+                        <span class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">Accuracy</span>
+                        <span id="res-accuracy" class="text-xl sm:text-2xl font-black text-emerald-400">80%</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">Total Time</span>
+                        <span id="res-time" class="text-xl sm:text-2xl font-black text-amber-400 font-mono">01:12</span>
+                    </div>
+                </div>
+
+                <!-- Save Score Form Card -->
+                <div id="save-score-card" class="bg-indigo-950/30 border border-indigo-500/30 p-5 rounded-2xl text-left space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-black uppercase text-indigo-300 tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-bookmark text-amber-400"></i> Save Score to Global Leaderboard
+                        </h4>
+                        <span class="text-[10px] text-slate-400">Local Persistence Enabled</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <!-- Avatar Selection -->
+                        <div class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border border-slate-700">
+                            <i id="avatar-preview" class="fa-solid fa-user-astronaut text-indigo-400 text-lg"></i>
+                            <select id="avatar-select" onchange="app.updateAvatarPreview()" class="bg-transparent text-xs text-slate-200 font-bold focus:outline-none cursor-pointer">
+                                <option value="fa-user-astronaut">Astronaut</option>
+                                <option value="fa-robot">Cyber Robot</option>
+                                <option value="fa-user-ninja">Code Ninja</option>
+                                <option value="fa-laptop-code">Dev Wizard</option>
+                                <option value="fa-brain">Mind Master</option>
+                            </select>
+                        </div>
+                        <!-- Name Input -->
+                        <input id="player-name-input" type="text" placeholder="Enter Player Handle (e.g. Alex_Dev)" class="flex-1 bg-slate-900 border border-slate-700 focus:border-indigo-500 px-4 py-2.5 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none font-medium">
+                        <button id="btn-save-score" onclick="app.saveCurrentScore()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Save Entry
+                        </button>
+                    </div>
+                    <p id="save-feedback" class="text-[11px] text-emerald-400 hidden font-bold"><i class="fa-solid fa-circle-check"></i> Score saved successfully to Leaderboard!</p>
+                </div>
+
+                <!-- Review Breakdown -->
+                <div class="space-y-3 text-left">
+                    <h4 class="text-xs font-extrabold text-slate-400 uppercase tracking-widest px-1">Question Review Breakdown</h4>
+                    <div id="results-breakdown" class="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-800">
+                    <button onclick="app.restartCurrentQuiz()" class="flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-rotate-right"></i> Retake Test
+                    </button>
+                    <button onclick="app.showScreen('leaderboard')" class="flex-1 py-3.5 px-5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-trophy"></i> View Leaderboard Cards
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- SCREEN 4: Dedicated Scoreboard & Leaderboard Cards System -->
+        <div id="screen-leaderboard" class="w-full hidden animate-pop-in space-y-8">
+            
+            <!-- Leaderboard Header -->
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+                <div>
+                    <span class="text-xs font-bold text-amber-400 tracking-widest uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-medal"></i> Global Hall of Fame
+                    </span>
+                    <h1 class="text-3xl font-black text-white mt-1">Scoreboard & Leaderboard Cards</h1>
+                    <p class="text-xs text-slate-400 mt-1">Review personal subject high scores and filter all-time player rankings.</p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="app.clearLeaderboardData()" class="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold text-xs transition-all cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i> Reset High Scores
+                    </button>
+                    <button onclick="app.showScreen('home')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-house"></i> Back to Hub
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION A: SUBJECT HIGH SCORE CARDS -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-black text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-star text-amber-400"></i> Subject Personal High Score Cards
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="subject-high-score-cards">
+                    <!-- Dynamic Subject Score Cards rendered via JS -->
+                </div>
+            </div>
+
+            <!-- SECTION B: LEADERBOARD FILTERS & CARDS LIST -->
+            <div class="glass-card p-6 rounded-3xl space-y-6 shadow-2xl border-slate-800">
+                
+                <!-- Filter Controls Bar -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                    
+                    <!-- Subject Filters -->
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <span class="text-xs font-bold text-slate-400 mr-2"><i class="fa-solid fa-filter text-indigo-400"></i> Subject:</span>
+                        <button onclick="app.filterLeaderboard('all')" class="filter-subj-btn px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-xs transition-all cursor-pointer" data-subj="all">All Subjects</button>
+                        <button onclick="app.filterLeaderboard('os')" class="filter-subj-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer" data-subj="os">OS</button>
+                        <button onclick="app.filterLeaderboard('java')" class="filter-subj-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer" data-subj="java">Java</button>
+                        <button onclick="app.filterLeaderboard('cn')" class="filter-subj-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer" data-subj="cn">CN</button>
+                        <button onclick="app.filterLeaderboard('math')" class="filter-subj-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer" data-subj="math">Math</button>
+                    </div>
+
+                    <!-- Search / Quick Info -->
+                    <div class="text-xs text-slate-400 font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-users text-amber-400"></i> Total Entries: <span id="lb-total-count" class="text-white font-bold">0</span>
+                    </div>
+
+                </div>
+
+                <!-- Leaderboard Cards Container -->
+                <div id="leaderboard-cards-container" class="space-y-3">
+                    <!-- Dynamic Leaderboard Cards Rendered Here -->
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="w-full py-5 text-center text-xs text-slate-500 border-t border-slate-900 bg-slate-950/80 z-10">
+        <p>MasterQuiz Pro Portal &bull; Full Offline LocalStorage Scoreboard Engine</p>
+    </footer>
+
+    <!-- Main JavaScript File -->
+    <script src="script.js" defer></script>
+</body>
+</html>
